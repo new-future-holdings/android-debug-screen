@@ -73,15 +73,25 @@ object Beagle : BeagleContract, SensorEventListener {
      * @param triggerGesture - Specifies the way the drawer can be opened. [TriggerGesture.SWIPE_AND_SHAKE] by default.
      * @param appearance - The [Appearance] that specifies the appearance the drawer. Optional.
      */
-    override fun imprint(application: Application, packageName: String?, triggerGesture: TriggerGesture, appearance: Appearance) {
+    override fun imprint(
+        application: Application,
+        packageName: String?,
+        triggerGesture: TriggerGesture,
+        appearance: Appearance
+    ) {
         this.appearance = appearance
         this.triggerGesture = triggerGesture
-        this.packageName = packageName ?: application.packageName.split(".").run { take(max(size - 1, 1)).joinToString(".") }
+        this.packageName = packageName ?: application.packageName.split(".")
+            .run { take(max(size - 1, 1)).joinToString(".") }
         application.unregisterActivityLifecycleCallbacks(lifecycleCallbacks)
         application.registerActivityLifecycleCallbacks(lifecycleCallbacks)
         if (triggerGesture == TriggerGesture.SWIPE_AND_SHAKE || triggerGesture == TriggerGesture.SHAKE_ONLY) {
             (application.getSystemService(Context.SENSOR_SERVICE) as? SensorManager?)?.run {
-                registerListener(this@Beagle, getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL)
+                registerListener(
+                    this@Beagle,
+                    getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                    SensorManager.SENSOR_DELAY_NORMAL
+                )
             }
         }
     }
@@ -131,7 +141,12 @@ object Beagle : BeagleContract, SensorEventListener {
     override fun fetch() {
         if (isEnabled) {
             notifyListenersOnDragStarted()
-            drawers[currentActivity]?.run { (parent as? BeagleDrawerLayout?)?.openDrawer(this) }
+            drawers[currentActivity]?.run {
+                (parent as? BeagleDrawerLayout?)?.apply {
+                    visibility = View.VISIBLE
+                    openDrawer(this)
+                }
+            }
         }
     }
 
@@ -145,6 +160,7 @@ object Beagle : BeagleContract, SensorEventListener {
         val drawerLayout = drawer?.parent as? BeagleDrawerLayout?
         return (drawerLayout?.isDrawerOpen(drawer) == true).also {
             drawerLayout?.closeDrawers()
+            drawerLayout?.visibility = View.GONE
         }
     }
 
@@ -156,7 +172,8 @@ object Beagle : BeagleContract, SensorEventListener {
      * @param payload - An optional String payload that can be opened in a dialog when the user clicks on a log message. Null by default.
      */
     override fun log(message: String, tag: String?, payload: String?) {
-        logItems = logItems.toMutableList().apply { add(0, LogItem(message = message, tag = tag, payload = payload)) }
+        logItems = logItems.toMutableList()
+            .apply { add(0, LogItem(message = message, tag = tag, payload = payload)) }
     }
 
     /**
@@ -202,8 +219,10 @@ object Beagle : BeagleContract, SensorEventListener {
             field = value.distinctBy { it.id }.sortedBy { it !is Trick.Header }
             updateItems()
         }
-    private val keylineOverlayToggleModule get() = moduleList.filterIsInstance<Trick.KeylineOverlayToggle>().firstOrNull()
-    private val viewBoundsOverlayToggleModule get() = moduleList.filterIsInstance<Trick.ViewBoundsOverlayToggle>().firstOrNull()
+    private val keylineOverlayToggleModule
+        get() = moduleList.filterIsInstance<Trick.KeylineOverlayToggle>().firstOrNull()
+    private val viewBoundsOverlayToggleModule
+        get() = moduleList.filterIsInstance<Trick.ViewBoundsOverlayToggle>().firstOrNull()
     internal val drawers = mutableMapOf<Activity, BeagleDrawer>()
     private var packageName = ""
     private var items = emptyList<DrawerItemViewModel>()
@@ -213,7 +232,10 @@ object Beagle : BeagleContract, SensorEventListener {
                 field = value
                 updateItems()
                 (if (value) keylineOverlayToggleModule else null).let { keylineOverlayModule ->
-                    drawers.values.forEach { drawer -> (drawer.parent as? BeagleDrawerLayout?)?.keylineOverlay = keylineOverlayModule }
+                    drawers.values.forEach { drawer ->
+                        (drawer.parent as? BeagleDrawerLayout?)?.keylineOverlay =
+                            keylineOverlayModule
+                    }
                 }
             }
         }
@@ -223,7 +245,10 @@ object Beagle : BeagleContract, SensorEventListener {
                 field = value
                 updateItems()
                 (if (value) viewBoundsOverlayToggleModule else null).let { viewBoundsOverlayToggleModule ->
-                    drawers.values.forEach { drawer -> (drawer.parent as? BeagleDrawerLayout?)?.viewBoundsOverlay = viewBoundsOverlayToggleModule }
+                    drawers.values.forEach { drawer ->
+                        (drawer.parent as? BeagleDrawerLayout?)?.viewBoundsOverlay =
+                            viewBoundsOverlayToggleModule
+                    }
                 }
             }
         }
@@ -233,7 +258,8 @@ object Beagle : BeagleContract, SensorEventListener {
                 field = value
                 updateItems()
                 try {
-                    ValueAnimator::class.java.methods.firstOrNull { it.name == "setDurationScale" }?.invoke(null, value)
+                    ValueAnimator::class.java.methods.firstOrNull { it.name == "setDurationScale" }
+                        ?.invoke(null, value)
                 } catch (_: Throwable) {
                 }
             }
@@ -261,8 +287,12 @@ object Beagle : BeagleContract, SensorEventListener {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
             // The check is added to make sure Beagle is not injected into activities that come from other libraries (LeakCanary, Google sign-in / In app purchase) where it causes crashes.
             if (activity.componentName.className.startsWith(packageName)) {
-                drawers[activity] = createAndAddDrawerLayout(activity, savedInstanceState?.isDrawerOpen == true)
-                (activity as? AppCompatActivity?)?.onBackPressedDispatcher?.addCallback(activity, onBackPressedCallback)
+                drawers[activity] =
+                    createAndAddDrawerLayout(activity, savedInstanceState?.isDrawerOpen == true)
+                (activity as? AppCompatActivity?)?.onBackPressedDispatcher?.addCallback(
+                    activity,
+                    onBackPressedCallback
+                )
             }
         }
 
@@ -278,7 +308,9 @@ object Beagle : BeagleContract, SensorEventListener {
         }
 
         override fun onActivitySaveInstanceState(activity: Activity, p1: Bundle) {
-            p1.isDrawerOpen = drawers[activity]?.let { drawer -> (drawer.parent as? BeagleDrawerLayout?)?.isDrawerOpen(drawer) } ?: false
+            p1.isDrawerOpen = drawers[activity]?.let { drawer ->
+                (drawer.parent as? BeagleDrawerLayout?)?.isDrawerOpen(drawer)
+            } ?: false
         }
 
         override fun onActivityDestroyed(activity: Activity) {
@@ -328,21 +360,20 @@ object Beagle : BeagleContract, SensorEventListener {
     //TODO: Make sure this doesn't break Activity shared element transitions.
     //TODO: Find a smart way to handle the case when the root view is already a DrawerLayout.
     private fun createAndAddDrawerLayout(activity: Activity, shouldOpenDrawer: Boolean) =
-        (appearance.themeResourceId?.let { ContextThemeWrapper(activity, it) } ?: activity).let { themedContext ->
+        (appearance.themeResourceId?.let { ContextThemeWrapper(activity, it) }
+            ?: activity).let { themedContext ->
             BeagleDrawer(themedContext).also { drawer ->
                 drawer.updateItems(items)
                 activity.findRootViewGroup().run {
                     post {
-                        val oldViews = (0 until childCount).map { getChildAt(it) }
-                        removeAllViews()
                         addView(
                             BeagleDrawerLayout(
                                 context = themedContext,
-                                oldViews = oldViews,
                                 drawer = drawer,
                                 drawerWidth = appearance.drawerWidth
                             ).apply {
                                 if (shouldOpenDrawer) {
+                                    visibility = View.VISIBLE
                                     openDrawer(drawer)
                                 }
                                 updateDrawerLockMode()
@@ -357,7 +388,10 @@ object Beagle : BeagleContract, SensorEventListener {
 
                                     override fun onDrawerStateChanged(newState: Int) = Unit
 
-                                    override fun onDrawerSlide(drawerView: View, slideOffset: Float) = activity.currentFocus?.hideKeyboard() ?: Unit
+                                    override fun onDrawerSlide(
+                                        drawerView: View,
+                                        slideOffset: Float
+                                    ) = activity.currentFocus?.hideKeyboard() ?: Unit
 
                                     override fun onDrawerClosed(drawerView: View) = Unit
 
@@ -372,10 +406,15 @@ object Beagle : BeagleContract, SensorEventListener {
             }
         }
 
-    internal fun openNetworkEventBodyDialog(networkLogItem: NetworkLogItem, shouldShowHeaders: Boolean) {
+    internal fun openNetworkEventBodyDialog(
+        networkLogItem: NetworkLogItem,
+        shouldShowHeaders: Boolean
+    ) {
         (currentActivity as? AppCompatActivity?)?.run {
             val content = if (shouldShowHeaders) {
-                "Headers:\n" + (if (networkLogItem.headers.isEmpty()) "No headers" else networkLogItem.headers.joinToString("\n")) + "\n\nBody:\n" + networkLogItem.body.let {
+                "Headers:\n" + (if (networkLogItem.headers.isEmpty()) "No headers" else networkLogItem.headers.joinToString(
+                    "\n"
+                )) + "\n\nBody:\n" + networkLogItem.body.let {
                     if (it.isEmpty() || it.isBlank()) "No data" else it
                 }
             } else {
@@ -419,7 +458,11 @@ object Beagle : BeagleContract, SensorEventListener {
 
     internal fun notifyListenersOnOpened() {
         onBackPressedCallback.isEnabled = true
-        drawers.values.forEach { drawer -> (drawer.parent as? BeagleDrawerLayout?)?.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNDEFINED) }
+        drawers.values.forEach { drawer ->
+            (drawer.parent as? BeagleDrawerLayout?)?.setDrawerLockMode(
+                DrawerLayout.LOCK_MODE_UNDEFINED
+            )
+        }
         listeners.forEach { it.onDrawerOpened() }
     }
 

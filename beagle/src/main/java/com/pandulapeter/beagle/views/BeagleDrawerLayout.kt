@@ -29,7 +29,6 @@ internal class BeagleDrawerLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-    oldViews: List<View> = emptyList(),
     drawer: View? = null,
     @Dimension drawerWidth: Int? = null
 ) : DrawerLayout(context, attrs, defStyleAttr) {
@@ -119,7 +118,7 @@ internal class BeagleDrawerLayout @JvmOverloads constructor(
     }
 
     init {
-        addView(container.apply { oldViews.forEach { view -> addView(view) } }, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        addView(container, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         addView(drawer, LayoutParams(drawerWidth ?: context.dimension(R.dimen.beagle_default_drawer_width), LayoutParams.MATCH_PARENT, GravityCompat.END))
     }
 }
