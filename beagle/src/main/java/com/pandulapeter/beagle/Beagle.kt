@@ -393,7 +393,9 @@ object Beagle : BeagleContract, SensorEventListener {
                                         slideOffset: Float
                                     ) = activity.currentFocus?.hideKeyboard() ?: Unit
 
-                                    override fun onDrawerClosed(drawerView: View) = Unit
+                                    override fun onDrawerClosed(drawerView: View){
+                                        visibility = View.GONE
+                                    }
 
                                     override fun onDrawerOpened(drawerView: View) = Unit
                                 })
