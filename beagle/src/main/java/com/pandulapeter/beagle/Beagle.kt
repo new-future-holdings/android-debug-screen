@@ -375,6 +375,8 @@ object Beagle : BeagleContract, SensorEventListener {
                                 if (shouldOpenDrawer) {
                                     visibility = View.VISIBLE
                                     openDrawer(drawer)
+                                } else {
+                                    visibility = View.GONE
                                 }
                                 updateDrawerLockMode()
                                 post { updateDrawerLockMode() }
