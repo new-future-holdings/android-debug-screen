@@ -141,10 +141,18 @@ object Beagle : BeagleContract, SensorEventListener {
     override fun fetch() {
         if (isEnabled) {
             notifyListenersOnDragStarted()
-            drawers[currentActivity]?.run {
-                (parent as? BeagleDrawerLayout?)?.apply {
-                    visibility = View.VISIBLE
-                    openDrawer(this)
+            currentActivity?.let {
+                drawers[it]?.let { drawer ->
+                    it.findRootViewGroup().let { root ->
+                        val count = root.childCount
+                        for (i in 0 until count) {
+                            val child = root.getChildAt(i)
+                            if (child is BeagleDrawerLayout) {
+                                child.visibility = View.VISIBLE
+                                child.openDrawer(drawer)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -395,7 +403,7 @@ object Beagle : BeagleContract, SensorEventListener {
                                         slideOffset: Float
                                     ) = activity.currentFocus?.hideKeyboard() ?: Unit
 
-                                    override fun onDrawerClosed(drawerView: View){
+                                    override fun onDrawerClosed(drawerView: View) {
                                         visibility = View.GONE
                                     }
 
